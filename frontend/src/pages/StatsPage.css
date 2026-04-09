@@ -1,0 +1,62 @@
+.period-tabs {
+  display: flex;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 3px;
+  margin-bottom: 20px;
+  gap: 3px;
+}
+
+.period-tab {
+  flex: 1;
+  padding: 9px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.period-tab--active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+}
+
+.stats-card {
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+}
+
+.stats-card__name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.stats-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stats-pct {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.stats-counts {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.stats-taken { color: var(--success); font-weight: 600; }
+.stats-skipped { color: var(--danger); font-weight: 600; }

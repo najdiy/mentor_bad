@@ -1,0 +1,44 @@
+.today-card {
+  background: var(--bg);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+}
+
+.today-card--done {
+  opacity: 0.65;
+}
+
+.today-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.today-card__time {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 40px;
+}
+
+.today-card__name {
+  font-size: 15px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.today-card__dose {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.today-card__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
