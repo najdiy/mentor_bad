@@ -51,18 +51,19 @@ async def create_supplement(
             hour=h,
             minute=m,
         )
-        from bot.scheduler.manager import add_reminder_job, add_stock_check_job
-        job_id = add_reminder_job(
-            bot=bot,
-            user_db_id=current_user.id,
-            supplement_id=sup.id,
-            schedule_id=schedule.id,
-            hour=h,
-            minute=m,
-            timezone=current_user.timezone,
-        )
-        await sched_repo.set_job_id(schedule.id, job_id)
-        add_stock_check_job(bot=bot, user_db_id=current_user.id, timezone=current_user.timezone)
+        if bot:
+            from bot.scheduler.manager import add_reminder_job, add_stock_check_job
+            job_id = add_reminder_job(
+                bot=bot,
+                user_db_id=current_user.id,
+                supplement_id=sup.id,
+                schedule_id=schedule.id,
+                hour=h,
+                minute=m,
+                timezone=current_user.timezone,
+            )
+            await sched_repo.set_job_id(schedule.id, job_id)
+            add_stock_check_job(bot=bot, user_db_id=current_user.id, timezone=current_user.timezone)
 
     return await sup_repo.get_by_id(sup.id)
 

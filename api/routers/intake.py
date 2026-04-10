@@ -35,8 +35,8 @@ async def intake_action(
         stock = await stock_repo.decrement(log.supplement_id, log.dose_taken)
         if stock and stock.current_count <= stock.reorder_threshold:
             sup = await sup_repo.get_by_id(log.supplement_id)
-            if sup:
-                bot = request.app.state.bot
+            bot = request.app.state.bot
+            if sup and bot:
                 await send_low_stock_alert(bot, current_user.telegram_id, sup.name, sup.id, stock.current_count)
         return {"status": "taken"}
 
@@ -60,6 +60,8 @@ async def intake_action(
         await session.refresh(snooze)
 
         bot = request.app.state.bot
+        if not bot:
+            return {"status": "snoozed", "remind_at": remind_at.isoformat()}
         from bot.scheduler.manager import add_snooze_job
         job_id = add_snooze_job(
             bot=bot,
