@@ -8,7 +8,6 @@ class Settings(BaseSettings):
     BOT_TOKEN: str
     ADMIN_IDS: str = ""
     DATABASE_URL: str = "sqlite+aiosqlite:///mentor_bads.db"
-    SCHEDULER_DB: str = "scheduler.db"
 
     WEBAPP_URL: str = "http://localhost:5173"
     SECRET_KEY: str = ""
