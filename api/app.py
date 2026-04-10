@@ -21,6 +21,11 @@ def create_app(bot=None) -> FastAPI:
     # Store bot instance for use in routers
     app.state.bot = bot
 
+    @app.on_event("startup")
+    async def startup():
+        from bot.database.engine import init_db
+        await init_db()
+
     # API routers
     app.include_router(schedule.router, prefix="/api")
     app.include_router(supplements.router, prefix="/api")
