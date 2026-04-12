@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Pill, Package, Trash2, Clock, AlertTriangle, Plus } from 'lucide-react'
 import { api } from '../api/client'
 import AddSupplementModal from '../components/AddSupplementModal'
 import './SupplementsPage.css'
@@ -48,7 +49,7 @@ export default function SupplementsPage() {
 
       {supplements.length === 0 && (
         <div className="empty">
-          <div className="empty-icon">💊</div>
+          <div className="empty-icon"><Pill size={48} strokeWidth={1.5} /></div>
           <div className="empty-text">Нет добавленных БАД.<br />Нажмите + чтобы добавить</div>
         </div>
       )}
@@ -62,15 +63,15 @@ export default function SupplementsPage() {
               onClick={() => handleDelete(sup.id, sup.name)}
               disabled={deleting === sup.id}
             >
-              🗑
+              <Trash2 size={16} />
             </button>
           </div>
           <div className="sup-card__meta">
-            <span>💊 {sup.dose_per_intake} шт. за приём</span>
+            <span><Pill size={13} /> {sup.dose_per_intake} шт. за приём</span>
             {sup.stock && (
               <span className={sup.stock.current_count <= sup.stock.reorder_threshold ? 'text-warn' : ''}>
-                📦 {sup.stock.current_count} шт.
-                {sup.stock.current_count <= sup.stock.reorder_threshold && ' ⚠️'}
+                <Package size={13} /> {sup.stock.current_count} шт.
+                {sup.stock.current_count <= sup.stock.reorder_threshold && <> <AlertTriangle size={13} /></>}
               </span>
             )}
           </div>
@@ -78,7 +79,7 @@ export default function SupplementsPage() {
             <div className="sup-card__times">
               {sup.schedules.map(s => (
                 <span key={s.id} className="time-chip">
-                  ⏰ {String(s.hour).padStart(2,'0')}:{String(s.minute).padStart(2,'0')}
+                  <Clock size={12} /> {String(s.hour).padStart(2,'0')}:{String(s.minute).padStart(2,'0')}
                 </span>
               ))}
             </div>
@@ -86,7 +87,7 @@ export default function SupplementsPage() {
         </div>
       ))}
 
-      <button className="fab" onClick={() => setShowModal(true)}>+</button>
+      <button className="fab" onClick={() => setShowModal(true)}><Plus size={24} /></button>
 
       {showModal && (
         <AddSupplementModal

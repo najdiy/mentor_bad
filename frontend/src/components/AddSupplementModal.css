@@ -54,6 +54,9 @@
 }
 
 .time-chip-removable {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: var(--primary-light);
   color: var(--primary);
   font-size: 12px;

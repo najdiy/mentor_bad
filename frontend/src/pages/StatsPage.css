@@ -58,5 +58,12 @@
   font-size: 13px;
 }
 
-.stats-taken { color: var(--success); font-weight: 600; }
-.stats-skipped { color: var(--danger); font-weight: 600; }
+.stats-taken,
+.stats-skipped {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 600;
+}
+.stats-taken { color: var(--success); }
+.stats-skipped { color: var(--danger); }

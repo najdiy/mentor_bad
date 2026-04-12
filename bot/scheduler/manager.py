@@ -73,12 +73,8 @@ def resume_user_jobs(user_db_id: int) -> None:
 
 def add_snooze_job(bot, user_db_id: int, supplement_id: int, schedule_id: int,
                    log_id: int, remind_at: datetime, snooze_id: int) -> str:
-    from bot.scheduler.jobs import send_reminder
     scheduler = get_scheduler()
     job_id = _snooze_job_id(user_db_id, snooze_id)
-
-    async def _snooze_wrapper(bot, user_db_id, supplement_id, schedule_id):
-        await send_reminder(bot, user_db_id, supplement_id, schedule_id)
 
     scheduler.add_job(
         send_reminder,

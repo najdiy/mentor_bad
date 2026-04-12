@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { BarChart3, Check, X } from 'lucide-react'
 import { api } from '../api/client'
 import './StatsPage.css'
 
@@ -44,7 +45,7 @@ export default function StatsPage() {
 
       {!loading && stats.length === 0 && (
         <div className="empty">
-          <div className="empty-icon">📊</div>
+          <div className="empty-icon"><BarChart3 size={48} strokeWidth={1.5} /></div>
           <div className="empty-text">Нет данных за выбранный период</div>
         </div>
       )}
@@ -58,8 +59,8 @@ export default function StatsPage() {
           <div className="stats-card__row">
             <span className="stats-pct">{s.percent}% принято</span>
             <div className="stats-counts">
-              <span className="stats-taken">✅ {s.taken}</span>
-              <span className="stats-skipped">❌ {s.skipped}</span>
+              <span className="stats-taken"><Check size={13} /> {s.taken}</span>
+              <span className="stats-skipped"><X size={13} /> {s.skipped}</span>
             </div>
           </div>
         </div>

@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     ADMIN_IDS: str = ""
     DATABASE_URL: str = "sqlite+aiosqlite:///mentor_bads.db"
 
-    WEBAPP_URL: str = "http://localhost:5173"
+    WEBAPP_URL: str = ""
     SECRET_KEY: str = ""
 
     @property

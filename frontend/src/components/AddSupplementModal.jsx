@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Clock, X } from 'lucide-react'
 import { api } from '../api/client'
 import './AddSupplementModal.css'
 
@@ -91,7 +92,7 @@ export default function AddSupplementModal({ onClose, onAdded }) {
             <div className="time-chips">
               {times.map(t => (
                 <span key={t} className="time-chip-removable" onClick={() => removeTime(t)}>
-                  ⏰ {t} ✕
+                  <Clock size={12} /> {t} <X size={12} />
                 </span>
               ))}
             </div>

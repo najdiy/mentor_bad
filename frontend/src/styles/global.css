@@ -54,8 +54,6 @@ body {
   border: none;
   cursor: pointer;
   transition: opacity 0.15s, transform 0.1s;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
 }
 
 .btn:active {
@@ -83,8 +81,6 @@ body {
   color: var(--primary);
   padding: 8px 14px;
   font-size: 14px;
-  text-transform: none;
-  letter-spacing: 0;
 }
 
 .btn-sm {
@@ -116,8 +112,6 @@ body {
   font-size: 22px;
   font-weight: 700;
   margin-bottom: 20px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 /* Section */
@@ -129,8 +123,7 @@ body {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.3px;
   margin-bottom: 10px;
   padding-left: 4px;
 }
@@ -172,8 +165,8 @@ body {
 }
 
 .empty-icon {
-  font-size: 48px;
   margin-bottom: 12px;
+  color: var(--text-secondary);
 }
 
 .empty-text {
@@ -279,7 +272,6 @@ body {
 .modal-title {
   font-size: 18px;
   font-weight: 700;
-  text-transform: uppercase;
   margin-bottom: 20px;
 }
 

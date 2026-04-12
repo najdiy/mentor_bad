@@ -1,4 +1,6 @@
 import os
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -8,7 +10,15 @@ from api.routers import schedule, supplements, intake, stock, stats, me
 
 
 def create_app(bot=None) -> FastAPI:
-    app = FastAPI(title="Mentor Labs API", docs_url="/api/docs")
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        if not bot:
+            from bot.database.engine import init_db
+            await init_db()
+        yield
+
+    app = FastAPI(title="Mentor Labs API", docs_url="/api/docs", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,
@@ -20,11 +30,6 @@ def create_app(bot=None) -> FastAPI:
 
     # Store bot instance for use in routers
     app.state.bot = bot
-
-    @app.on_event("startup")
-    async def startup():
-        from bot.database.engine import init_db
-        await init_db()
 
     # API routers
     app.include_router(schedule.router, prefix="/api")

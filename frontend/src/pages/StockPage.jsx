@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Package, AlertTriangle, Pencil, Check, X } from 'lucide-react'
 import { api } from '../api/client'
 import './StockPage.css'
 
@@ -50,7 +51,7 @@ export default function StockPage() {
 
       {stocks.length === 0 && (
         <div className="empty">
-          <div className="empty-icon">📦</div>
+          <div className="empty-icon"><Package size={48} strokeWidth={1.5} /></div>
           <div className="empty-text">Нет данных. Добавьте БАД во вкладке «БАД»</div>
         </div>
       )}
@@ -63,7 +64,7 @@ export default function StockPage() {
           <div key={s.supplement_id} className={`stock-card ${isLow ? 'stock-card--low' : ''}`}>
             <div className="stock-card__header">
               <div className="stock-card__name">{s.supplement_name}</div>
-              {isLow && <span className="low-badge">⚠️ Мало</span>}
+              {isLow && <span className="low-badge"><AlertTriangle size={12} /> Мало</span>}
             </div>
 
             <div className="stock-card__count-row">
@@ -82,13 +83,13 @@ export default function StockPage() {
                     disabled={saving === s.supplement_id}
                     onClick={() => saveEdit(s.supplement_id)}
                   >
-                    {saving === s.supplement_id ? '...' : '✓'}
+                    {saving === s.supplement_id ? '...' : <Check size={14} />}
                   </button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => setEditing(null)}>✕</button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setEditing(null)}><X size={14} /></button>
                 </div>
               ) : (
                 <span className="stock-count" onClick={() => startEdit(s)}>
-                  {s.current_count} шт. ✏️
+                  {s.current_count} шт. <Pencil size={13} />
                 </span>
               )}
             </div>

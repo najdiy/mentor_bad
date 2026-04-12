@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Check, X, Clock, Pill } from 'lucide-react'
 import { api } from '../api/client'
 import './TodayPage.css'
 
@@ -57,7 +58,7 @@ export default function TodayPage() {
 
       {logs.length === 0 && (
         <div className="empty">
-          <div className="empty-icon">💊</div>
+          <div className="empty-icon"><Pill size={48} strokeWidth={1.5} /></div>
           <div className="empty-text">Нет запланированных приёмов.<br />Добавьте БАД во вкладке «БАД»</div>
         </div>
       )}
@@ -79,21 +80,21 @@ export default function TodayPage() {
                   disabled={acting === log.log_id}
                   onClick={() => handleAction(log.log_id, 'taken')}
                 >
-                  ✅ Принял
+                  <Check size={14} /> Принял
                 </button>
                 <button
                   className="btn btn-secondary btn-sm"
                   disabled={acting === log.log_id}
                   onClick={() => handleAction(log.log_id, 'skip')}
                 >
-                  ❌ Пропустить
+                  <X size={14} /> Пропустить
                 </button>
                 <button
                   className="btn btn-ghost btn-sm"
                   disabled={acting === log.log_id}
                   onClick={() => handleAction(log.log_id, 'snooze', 30)}
                 >
-                  ⏰ +30 мин
+                  <Clock size={14} /> +30 мин
                 </button>
               </div>
             </div>

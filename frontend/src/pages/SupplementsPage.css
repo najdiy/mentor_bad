@@ -40,6 +40,12 @@
   margin-bottom: 10px;
 }
 
+.sup-card__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .text-warn {
   color: var(--warning);
 }
@@ -51,6 +57,9 @@
 }
 
 .time-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: var(--primary-light);
   color: var(--primary);
   font-size: 12px;
