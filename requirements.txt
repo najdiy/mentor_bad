@@ -10,3 +10,4 @@ python-dotenv==1.0.1
 pytz==2024.2
 cachetools==5.5.0
 greenlet==3.2.5
+alembic==1.16.5

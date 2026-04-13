@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routers import schedule, supplements, intake, stock, stats, me
+from bot.config import settings
 
 
 def create_app(bot=None) -> FastAPI:
@@ -20,9 +21,13 @@ def create_app(bot=None) -> FastAPI:
 
     app = FastAPI(title="Mentor Labs API", docs_url="/api/docs", lifespan=lifespan)
 
+    allowed_origins = ["http://localhost:5173", "http://localhost:5174"]
+    if settings.WEBAPP_URL:
+        allowed_origins.append(settings.WEBAPP_URL)
+
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

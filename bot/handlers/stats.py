@@ -34,7 +34,7 @@ async def handle_stats_period(callback: CallbackQuery, session: AsyncSession) ->
         await callback.answer("Сначала напишите /start", show_alert=True)
         return
 
-    stats_rows = await log_repo.get_stats_for_period(user.id, days)
+    stats_rows = await log_repo.get_stats_for_period(user.id, days, user.timezone)
     supplements = await sup_repo.get_active_by_user(user.id)
     stocks = await stock_repo.get_by_user(user.id)
 

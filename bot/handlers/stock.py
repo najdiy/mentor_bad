@@ -99,10 +99,10 @@ async def cmd_my_schedule(message: Message, session: AsyncSession) -> None:
         await message.answer("Сначала напишите /start")
         return
 
-    logs = await log_repo.get_today_by_user(user.id)
+    logs = await log_repo.get_today_by_user(user.id, user.timezone)
     supplements = await sup_repo.get_active_by_user(user.id)
     sup_map = {s.id: s for s in supplements}
 
     from bot.utils.formatters import format_schedule_message
-    text = format_schedule_message(logs, sup_map)
+    text = format_schedule_message(logs, sup_map, user.timezone)
     await message.answer(text)

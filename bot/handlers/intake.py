@@ -1,37 +1,35 @@
-from datetime import datetime, timedelta, timezone
-
 from aiogram import Router
 from aiogram.types import CallbackQuery
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.database.repositories import UserRepo, IntakeLogRepo, StockRepo, SupplementRepo
+from bot.database.repositories import UserRepo, IntakeLogRepo
 from bot.scheduler.manager import add_snooze_job
 from bot.scheduler.jobs import send_low_stock_alert
+from bot.services.intake_service import process_taken, process_skip, process_snooze
 
 router = Router()
 
 
-@router.callback_query(lambda c: c.data and c.data.startswith("taken:"))
-async def handle_taken(callback: CallbackQuery, session: AsyncSession) -> None:
+async def _get_log_or_error(callback: CallbackQuery, session: AsyncSession):
     log_id = int(callback.data.split(":")[1])
     log_repo = IntakeLogRepo(session)
-    stock_repo = StockRepo(session)
-    sup_repo = SupplementRepo(session)
-    user_repo = UserRepo(session)
-
     log = await log_repo.get_by_id(log_id)
     if not log:
         await callback.answer("Запись не найдена", show_alert=True)
-        return
-
+        return None
     if log.status in ("taken", "skipped"):
         await callback.answer("Вы уже ответили на это напоминание", show_alert=True)
+        return None
+    return log
+
+
+@router.callback_query(lambda c: c.data and c.data.startswith("taken:"))
+async def handle_taken(callback: CallbackQuery, session: AsyncSession) -> None:
+    log = await _get_log_or_error(callback, session)
+    if not log:
         return
 
-    await log_repo.update_status(log_id, "taken")
-
-    # Decrement stock
-    stock = await stock_repo.decrement(log.supplement_id, log.dose_taken)
+    result = await process_taken(session, log)
 
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.edit_text(
@@ -39,29 +37,24 @@ async def handle_taken(callback: CallbackQuery, session: AsyncSession) -> None:
     )
     await callback.answer("Отлично! Продолжайте в том же духе 💪")
 
-    # Check low stock
-    if stock and stock.current_count <= stock.reorder_threshold:
-        sup = await sup_repo.get_by_id(log.supplement_id)
+    if result.stock_low:
+        user_repo = UserRepo(session)
         user = await user_repo.get_by_telegram_id(callback.from_user.id)
-        if sup and user:
-            await send_low_stock_alert(callback.bot, user.telegram_id, sup.name, sup.id, stock.current_count)
+        if user:
+            await send_low_stock_alert(
+                callback.bot, user.telegram_id,
+                result.supplement_name, result.supplement_id, result.stock_count,
+            )
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("skip:"))
 async def handle_skip(callback: CallbackQuery, session: AsyncSession) -> None:
-    log_id = int(callback.data.split(":")[1])
-    log_repo = IntakeLogRepo(session)
-
-    log = await log_repo.get_by_id(log_id)
+    log = await _get_log_or_error(callback, session)
     if not log:
-        await callback.answer("Запись не найдена", show_alert=True)
         return
 
-    if log.status in ("taken", "skipped"):
-        await callback.answer("Вы уже ответили на это напоминание", show_alert=True)
-        return
+    await process_skip(session, log)
 
-    await log_repo.update_status(log_id, "skipped")
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.edit_text(
         callback.message.text + "\n\n❌ <i>Пропущено</i>"
@@ -72,7 +65,7 @@ async def handle_skip(callback: CallbackQuery, session: AsyncSession) -> None:
 @router.callback_query(lambda c: c.data and (c.data.startswith("snooze_30:") or c.data.startswith("snooze_60:")))
 async def handle_snooze(callback: CallbackQuery, session: AsyncSession) -> None:
     parts = callback.data.split(":")
-    snooze_type = parts[0]  # snooze_30 or snooze_60
+    snooze_type = parts[0]
     log_id = int(parts[1])
     minutes = 30 if snooze_type == "snooze_30" else 60
 
@@ -83,7 +76,6 @@ async def handle_snooze(callback: CallbackQuery, session: AsyncSession) -> None:
     if not log:
         await callback.answer("Запись не найдена", show_alert=True)
         return
-
     if log.status in ("taken", "skipped"):
         await callback.answer("Вы уже ответили на это напоминание", show_alert=True)
         return
@@ -93,21 +85,7 @@ async def handle_snooze(callback: CallbackQuery, session: AsyncSession) -> None:
         await callback.answer()
         return
 
-    remind_at = datetime.now(timezone.utc) + timedelta(minutes=minutes)
-
-    # Save snooze to DB
-    from bot.database.models import SnoozeQueue
-    snooze = SnoozeQueue(
-        user_id=log.user_id,
-        supplement_id=log.supplement_id,
-        schedule_id=log.schedule_id,
-        intake_log_id=log.id,
-        remind_at=remind_at,
-        original_scheduled_at=log.scheduled_at,
-    )
-    session.add(snooze)
-    await session.flush()
-    await session.refresh(snooze)
+    result = await process_snooze(session, log, minutes)
 
     job_id = add_snooze_job(
         bot=callback.bot,
@@ -115,13 +93,13 @@ async def handle_snooze(callback: CallbackQuery, session: AsyncSession) -> None:
         supplement_id=log.supplement_id,
         schedule_id=log.schedule_id,
         log_id=log.id,
-        remind_at=remind_at,
-        snooze_id=snooze.id,
+        remind_at=result.remind_at,
+        snooze_id=result.snooze_id,
     )
 
     from sqlalchemy import update
-    from bot.database.models import SnoozeQueue as SQ
-    await session.execute(update(SQ).where(SQ.id == snooze.id).values(job_id=job_id))
+    from bot.database.models import SnoozeQueue
+    await session.execute(update(SnoozeQueue).where(SnoozeQueue.id == result.snooze_id).values(job_id=job_id))
 
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.edit_text(
@@ -132,13 +110,8 @@ async def handle_snooze(callback: CallbackQuery, session: AsyncSession) -> None:
 
 @router.callback_query(lambda c: c.data and c.data.startswith("reorder_done:"))
 async def handle_reorder_done(callback: CallbackQuery, session: AsyncSession) -> None:
-    supplement_id = int(callback.data.split(":")[1])
-    from bot.states.fsm import UpdateStockStates
-    from aiogram.fsm.context import FSMContext
-
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.answer(
         "📦 Введите новое количество единиц в запасе:"
     )
-    # Store supplement_id in FSM via update_stock flow
     await callback.answer()

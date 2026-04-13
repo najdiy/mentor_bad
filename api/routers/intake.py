@@ -1,12 +1,12 @@
-from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_session, get_current_user
 from api.schemas import IntakeAction
-from bot.database.models import User, SnoozeQueue
-from bot.database.repositories import IntakeLogRepo, StockRepo, SupplementRepo
+from bot.database.models import User
+from bot.database.repositories import IntakeLogRepo
 from bot.scheduler.jobs import send_low_stock_alert
+from bot.services.intake_service import process_taken, process_skip, process_snooze
 
 router = APIRouter()
 
@@ -20,48 +20,36 @@ async def intake_action(
     session: AsyncSession = Depends(get_session),
 ):
     log_repo = IntakeLogRepo(session)
-    stock_repo = StockRepo(session)
-    sup_repo = SupplementRepo(session)
 
     log = await log_repo.get_by_id(log_id)
     if not log or log.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Log not found")
-
     if log.status in ("taken", "skipped"):
         raise HTTPException(status_code=409, detail="Already actioned")
 
     if body.action == "taken":
-        await log_repo.update_status(log_id, "taken")
-        stock = await stock_repo.decrement(log.supplement_id, log.dose_taken)
-        if stock and stock.current_count <= stock.reorder_threshold:
-            sup = await sup_repo.get_by_id(log.supplement_id)
+        result = await process_taken(session, log)
+        if result.stock_low:
             bot = request.app.state.bot
-            if sup and bot:
-                await send_low_stock_alert(bot, current_user.telegram_id, sup.name, sup.id, stock.current_count)
+            if bot:
+                await send_low_stock_alert(
+                    bot, current_user.telegram_id,
+                    result.supplement_name, result.supplement_id, result.stock_count,
+                )
         return {"status": "taken"}
 
     elif body.action == "skip":
-        await log_repo.update_status(log_id, "skipped")
+        await process_skip(session, log)
         return {"status": "skipped"}
 
     elif body.action == "snooze":
         minutes = body.snooze_minutes or 30
-        remind_at = datetime.now(timezone.utc) + timedelta(minutes=minutes)
-        snooze = SnoozeQueue(
-            user_id=current_user.id,
-            supplement_id=log.supplement_id,
-            schedule_id=log.schedule_id,
-            intake_log_id=log.id,
-            remind_at=remind_at,
-            original_scheduled_at=log.scheduled_at,
-        )
-        session.add(snooze)
-        await session.flush()
-        await session.refresh(snooze)
+        result = await process_snooze(session, log, minutes)
 
         bot = request.app.state.bot
         if not bot:
-            return {"status": "snoozed", "remind_at": remind_at.isoformat()}
+            return {"status": "snoozed", "remind_at": result.remind_at.isoformat()}
+
         from bot.scheduler.manager import add_snooze_job
         job_id = add_snooze_job(
             bot=bot,
@@ -69,11 +57,12 @@ async def intake_action(
             supplement_id=log.supplement_id,
             schedule_id=log.schedule_id,
             log_id=log.id,
-            remind_at=remind_at,
-            snooze_id=snooze.id,
+            remind_at=result.remind_at,
+            snooze_id=result.snooze_id,
         )
         from sqlalchemy import update
+        from bot.database.models import SnoozeQueue
         await session.execute(
-            update(SnoozeQueue).where(SnoozeQueue.id == snooze.id).values(job_id=job_id)
+            update(SnoozeQueue).where(SnoozeQueue.id == result.snooze_id).values(job_id=job_id)
         )
-        return {"status": "snoozed", "remind_at": remind_at.isoformat()}
+        return {"status": "snoozed", "remind_at": result.remind_at.isoformat()}

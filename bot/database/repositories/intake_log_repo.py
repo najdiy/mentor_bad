@@ -1,6 +1,8 @@
 from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
+
+import pytz
 from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -41,23 +43,31 @@ class IntakeLogRepo:
             .values(status=status, actioned_at=datetime.now(timezone.utc))
         )
 
-    async def get_today_by_user(self, user_id: int) -> List[IntakeLog]:
-        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-        today_end = today_start + timedelta(days=1)
+    async def get_today_by_user(self, user_id: int, user_timezone: str = "UTC") -> List[IntakeLog]:
+        tz = pytz.timezone(user_timezone)
+        local_now = datetime.now(tz)
+        local_start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        local_end = local_start + timedelta(days=1)
+        # Convert local day boundaries to UTC for DB query
+        today_start_utc = local_start.astimezone(pytz.utc).replace(tzinfo=None)
+        today_end_utc = local_end.astimezone(pytz.utc).replace(tzinfo=None)
         result = await self.session.execute(
             select(IntakeLog)
             .options(selectinload(IntakeLog.supplement))
             .where(
                 IntakeLog.user_id == user_id,
-                IntakeLog.scheduled_at >= today_start,
-                IntakeLog.scheduled_at < today_end,
+                IntakeLog.scheduled_at >= today_start_utc,
+                IntakeLog.scheduled_at < today_end_utc,
             )
             .order_by(IntakeLog.scheduled_at)
         )
         return list(result.scalars().all())
 
-    async def get_stats_for_period(self, user_id: int, days: int) -> List[dict]:
-        since = datetime.now(timezone.utc) - timedelta(days=days)
+    async def get_stats_for_period(self, user_id: int, days: int, user_timezone: str = "UTC") -> List[dict]:
+        tz = pytz.timezone(user_timezone)
+        local_now = datetime.now(tz)
+        local_start = (local_now - timedelta(days=days)).replace(hour=0, minute=0, second=0, microsecond=0)
+        since = local_start.astimezone(pytz.utc).replace(tzinfo=None)
         result = await self.session.execute(
             select(
                 IntakeLog.supplement_id,

@@ -19,7 +19,7 @@ async def get_stats(
     log_repo = IntakeLogRepo(session)
     sup_repo = SupplementRepo(session)
 
-    rows = await log_repo.get_stats_for_period(current_user.id, period)
+    rows = await log_repo.get_stats_for_period(current_user.id, period, current_user.timezone)
     supplements = await sup_repo.get_active_by_user(current_user.id)
     sup_map = {s.id: s for s in supplements}
 

@@ -1,3 +1,4 @@
+import pytz
 from bot.database.models import Supplement, Stock
 
 
@@ -32,16 +33,19 @@ def format_stats_message(period_label: str, stats_rows: list[dict], supplements:
     return "\n".join(lines)
 
 
-def format_schedule_message(logs_today: list, supplements: dict) -> str:
+def format_schedule_message(logs_today: list, supplements: dict, user_timezone: str = "UTC") -> str:
     if not logs_today:
         return "📋 На сегодня приёмов не запланировано.\n\nДобавьте БАД через /add_supplement"
 
+    tz = pytz.timezone(user_timezone)
     STATUS_EMOJI = {"taken": "✅", "skipped": "❌", "pending": "⏳", "snoozed": "⏰"}
     lines = ["📋 <b>Расписание на сегодня:</b>\n"]
     for log in logs_today:
         sup = supplements.get(log.supplement_id)
         name = sup.name if sup else f"БАД #{log.supplement_id}"
-        time_str = log.scheduled_at.strftime("%H:%M")
+        utc_time = pytz.utc.localize(log.scheduled_at)
+        local_time = utc_time.astimezone(tz)
+        time_str = local_time.strftime("%H:%M")
         emoji = STATUS_EMOJI.get(log.status, "❓")
         lines.append(f"{emoji} {time_str} — {name} ({log.dose_taken} шт.)")
     return "\n".join(lines)
